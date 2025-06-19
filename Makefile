@@ -15,32 +15,65 @@ install: ## Install the virtual environment and dependencies
 	@echo "1. Get FREE Groq API key: https://console.groq.com"
 	@echo "2. Add it to .env file: GROQ_API_KEY=your_key_here"
 	@echo "3. Run: make run"
-	@echo "4. Test: make demo"
 
 .PHONY: run
-run: ## Start the autonomous email agent
-	@echo "🚀 Starting Autonomous Email Agent..."
+run: ## Start the enhanced email agent with dashboard
+	@echo "🚀 Starting Enhanced Email Agent System..."
+	@echo "📡 Starting API server on http://localhost:8000"
+	@uv run python teton_email_agent/main.py &
+	@echo "⏳ Waiting for API server to start..."
+	@sleep 5
+	@echo "🎨 Starting Streamlit dashboard on http://localhost:8501"
+	@echo ""
+	@echo "🎯 SYSTEM READY!"
+	@echo "📊 Dashboard: http://localhost:8501"
+	@echo "🔧 API: http://localhost:8000"
+	@echo "📚 API Docs: http://localhost:8000/docs"
+	@echo ""
+	@echo "Press CTRL+C to stop dashboard, then 'make stop' to stop API"
+	@uv run streamlit run dashboard/app.py
+
+.PHONY: run-api-only
+run-api-only: ## Start only the API server
+	@echo "🚀 Starting API server only..."
 	@uv run python teton_email_agent/main.py
 
-.PHONY: demo
-demo: ## Run the interview demonstration
-	@echo "🎬 Running interview demo..."
-	@uv run python interview_demo.py
+.PHONY: run-dashboard-only
+run-dashboard-only: ## Start only the dashboard
+	@echo "🎨 Starting dashboard only..."
+	@uv run streamlit run dashboard/app.py
 
-.PHONY: check
-check: ## Run code quality tools
-	@echo "🚀 Checking code quality: Running pre-commit"
-	@uv run pre-commit run -a
+.PHONY: setup-env
+setup-env: ## Setup environment file from example
+	@if [ ! -f .env ]; then \
+		echo "⚙️ Creating .env file from example..."; \
+		cp .env.example .env; \
+		echo "🔑 Please add your GROQ_API_KEY to .env file"; \
+	else \
+		echo "✅ .env file already exists"; \
+	fi
 
-.PHONY: test
-test: ## Test the code with pytest
-	@echo "🚀 Testing code: Running pytest"
-	@uv run pytest
+.PHONY: stop
+stop: ## Stop all running services
+	@echo "🛑 Stopping email agent services..."
+	@pkill -f "python teton_email_agent/main.py" || echo "API server not running"
+	@pkill -f "streamlit run dashboard/app.py" || echo "Dashboard not running"
+	@echo "✅ All services stopped"
 
-.PHONY: quick-test
-quick-test: ## Quick readiness check for interview
-	@echo "🔍 Quick readiness check..."
-	@uv run python quick_test.py
+.PHONY: restart
+restart: stop run ## Restart all services
+	@echo "🔄 Restarting email agent system..."
+
+.PHONY: status
+status: ## Check system status
+	@echo "📊 System Status Check:"
+	@echo "======================"
+	@pgrep -f "python teton_email_agent/main.py" > /dev/null && echo "📡 API Server: ✅ Running" || echo "📡 API Server: ❌ Stopped"
+	@pgrep -f "streamlit run dashboard/app.py" > /dev/null && echo "🎨 Dashboard: ✅ Running" || echo "🎨 Dashboard: ❌ Stopped"
+	@echo ""
+	@echo "🔗 Access URLs:"
+	@echo "📊 Dashboard: http://localhost:8501"
+	@echo "🔧 API: http://localhost:8000"
 
 .PHONY: clean
 clean: ## Clean up cache and temporary files
@@ -53,15 +86,15 @@ clean: ## Clean up cache and temporary files
 	@find . -type f -name "*.pyd" -delete
 	@find . -name ".DS_Store" -delete
 
-.PHONY: setup-env
-setup-env: ## Setup environment file from example
-	@if [ ! -f .env ]; then \
-		echo "⚙️ Creating .env file from example..."; \
-		cp .env.example .env; \
-		echo "🔑 Please add your GROQ_API_KEY to .env file"; \
-	else \
-		echo "✅ .env file already exists"; \
-	fi
+.PHONY: check
+check: ## Run code quality tools
+	@echo "🚀 Checking code quality: Running pre-commit"
+	@uv run pre-commit run -a
+
+.PHONY: test
+test: ## Test the code with pytest
+	@echo "🚀 Testing code: Running pytest"
+	@uv run pytest
 
 .PHONY: lint
 lint: ## Run linting tools
@@ -74,23 +107,6 @@ format: ## Format code with black and ruff
 	@echo "🎨 Formatting code..."
 	@uv run ruff format .
 	@uv run ruff check . --fix
-
-.PHONY: interview-prep
-interview-prep: install setup-env quick-test ## Complete interview preparation
-	@echo ""
-	@echo "🎯 INTERVIEW PREPARATION COMPLETE!"
-	@echo "========================================="
-	@echo "📋 Checklist:"
-	@echo "  ✅ Dependencies installed"
-	@echo "  ✅ Environment configured"
-	@echo "  ✅ Quick test passed"
-	@echo ""
-	@echo "🔑 Final steps:"
-	@echo "1. Add GROQ_API_KEY to .env (https://console.groq.com)"
-	@echo "2. Start agent: make run"
-	@echo "3. Run demo: make demo"
-	@echo ""
-	@echo "🏆 Ready for interview success!"
 
 .PHONY: help
 help: ## Show this help message

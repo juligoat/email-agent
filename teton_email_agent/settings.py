@@ -1,8 +1,8 @@
 """
-Configuration management
+Streamlined configuration for project purropses
 """
 
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
@@ -16,51 +16,55 @@ class AgentConfigurationError(Exception):
 
 
 class Settings(BaseSettings):
-    """Application settings"""
+    """Streamlined settings for interview demonstration"""
 
-    # Groq API
-    groq_api_key: Optional[str] = Field(default=None)
+    # REQUIRED
+    groq_api_key: Optional[str] = Field(default=None, description="Groq API key for LLM")
 
-    # Gmail
+    # GMAIL INTEGRATION (Optional)
     gmail_credentials_path: str = Field(default="credentials.json")
     gmail_token_path: str = Field(default="token.json")
 
-    # Agent
-    email_check_interval: int = Field(default=60)
-    confidence_threshold: float = Field(default=0.7)
+    # CORE AGENT SETTINGS
+    confidence_threshold: float = Field(default=0.7, ge=0.0, le=1.0)
+    email_check_interval: int = Field(default=60, ge=10, le=3600)
 
-    # Email whitelist
-    email_whitelist: str = Field(default="")
+    # SECURITY (Basic)
+    email_whitelist: str = Field(default="", description="Comma-separated email addresses")
 
-    # Optional fields that might be in .env but aren't used
-    llm_provider: Optional[str] = Field(default=None)
-    host: Optional[str] = Field(default=None)
-    port: Optional[str] = Field(default=None)
-    debug: Optional[bool] = Field(default=None)
+    # TOOLS (Simple)
+    web_search_enabled: bool = Field(default=True)
+    auto_reply_enabled: bool = Field(default=True)
 
-    model_config = {
-        "env_file": ".env",
-        "case_sensitive": False,
-        "extra": "allow"  # Allow extra fields from .env
-    }
+    # LANGCHAIN
+    langchain_temperature: float = Field(default=0.3, ge=0.0, le=2.0)
+    langchain_max_tokens: int = Field(default=1000, ge=100, le=4000)
+    langchain_model: str = Field(default="llama-3.1-8b-instant")
+
+    # DEVELOPMENT
+    debug_mode: bool = Field(default=False)
+    mock_mode: bool = Field(default=False)
+
+    model_config = {"env_file": ".env", "case_sensitive": False}
 
     @model_validator(mode="after")
-    def validate_groq_api_key(self):
-        if not self.groq_api_key:
+    def validate_configuration(self):
+        """Validate essential configuration"""
+        if not self.groq_api_key and not self.mock_mode:
             raise AgentConfigurationError()
         return self
 
-    def get_email_whitelist(self):
+    def get_email_whitelist(self) -> List[str]:
         """Get email whitelist as a list"""
         if not self.email_whitelist.strip():
             return []
-        return [email.strip() for email in self.email_whitelist.split(",") if email.strip()]
+        return [email.strip().lower() for email in self.email_whitelist.split(",") if email.strip()]
 
     def is_sender_whitelisted(self, sender_email: str) -> bool:
         """Check if sender is in whitelist"""
         whitelist = self.get_email_whitelist()
 
-        # If no whitelist set, allow all (backward compatibility)
+        # If no whitelist set, allow all
         if not whitelist:
             return True
 
@@ -70,5 +74,18 @@ class Settings(BaseSettings):
         else:
             email = sender_email.strip()
 
-        # Check against whitelist (case insensitive)
-        return any(whitelisted.lower() in email.lower() for whitelisted in whitelist)
+        email = email.lower()
+
+        # Check against whitelist
+        for whitelisted in whitelist:
+            if email == whitelisted or whitelisted in email:
+                return True
+        return False
+
+    def get_langchain_config(self) -> dict:
+        """Get LangChain configuration"""
+        return {
+            "temperature": self.langchain_temperature,
+            "max_tokens": self.langchain_max_tokens,
+            "model_name": self.langchain_model,
+        }
