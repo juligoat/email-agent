@@ -139,3 +139,8 @@ cython_debug/
 
 # Exclude .DS_Store files from being added
 .DS_Store
+
+# Private Files:
+credentials.json
+token.json
+.env

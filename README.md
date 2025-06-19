@@ -1,22 +1,59 @@
-# email-agent
+# 🤖 Autonomous Email Agent
 
-Teton tech interview
+AI-powered email assistant that automatically processes Gmail and takes intelligent actions.
 
-## Getting started with your project
-
-First, create a repository on GitHub with the same name as this project, and then run the following commands:
+## ⚡ Quick Start
 
 ```bash
-git clone git@github.com:GiannisKav/email-agent
-cd email-agent
-```
-
-Finally, install the environment and the pre-commit hooks with
-
-```bash
+# 1. Setup
 make install
+
+# 2. Configure .env with:
+#   - GROQ_API_KEY
+#   - EMAIL_WHITELIST
+
+# 3. Setup Gmail OAuth
+#   - Download credentials.json from Google Cloud Console
+#   - Enable Gmail API
+
+# 4. Run
+make run
 ```
 
----
+## 🚀 Features
 
-Repository initiated with [cookiecutter-template](https://github.com/GiannisKav/cookiecutter-template).
+- **Smart Email Processing**: Understands email content using Groq LLM
+- **Autonomous Actions**: Replies, archives, flags urgent, schedules meetings
+- **Gmail Integration**: Real-time monitoring with proper email threading
+- **Security**: Email whitelist prevents unauthorized processing
+- **Web Interface**: Monitor agent activity at `http://localhost:8000`
+
+## 🔧 Commands
+
+```bash
+make run          # Start the agent
+make demo         # Run demo
+make test         # Run tests
+make help         # See all commands
+```
+
+## 📊 Monitoring
+
+- **Status**: `GET /agent/status`
+- **Logs**: `GET /agent/logs`
+- **Test**: `POST /emails/test`
+
+## 🛡️ Security
+
+Only processes emails from whitelisted senders. Configure in `.env`:
+```
+EMAIL_WHITELIST=trusted@domain.com,another@domain.com
+```
+
+## 🏗️ Architecture
+
+```
+Email → Gmail API → Agent (Groq LLM) → Tools → Actions
+```
+
+Built with FastAPI, Pydantic, and async Python for production reliability.

@@ -1,12 +1,21 @@
 [project]
-name = "email-agent"
+name = "teton-email-agent"
 version = "0.0.1"
 
-description = "Teton tech interview"
+description = "teton.ai tech project"
 authors = [{ name = "Julian Irigoyen", email = "juli.irigoyen96@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.10,<4.0"
-dependencies = ["loguru"]
+dependencies = [
+    "fastapi==0.104.1",
+    "google-api-python-client==2.108.0",
+    "google-auth==2.23.4",
+    "google-auth-oauthlib==1.1.0",
+    "groq>=0.4.0",
+    "pydantic==2.5.0",
+    "pydantic-settings>=2.2.1",
+    "uvicorn[standard]==0.24.0",
+]
 
 [tool.uv]
 dev-dependencies = [
@@ -28,11 +37,16 @@ dev-dependencies = [
 requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
-
+# ADD THIS SECTION - This fixes the build error
+[tool.hatch.build.targets.wheel]
+packages = ["teton_email_agent"]
 
 [tool.mypy]
-files = ["email_agent", "tests"]
-disallow_untyped_defs = true
+packages = ["teton_email_agent"]
+namespace_packages = true
+explicit_package_bases = true
+exclude = ["tests/", "build/", "dist/"]
+disallow_untyped_defs = false
 disallow_any_unimported = false
 no_implicit_optional = true
 check_untyped_defs = true
@@ -41,11 +55,14 @@ warn_unused_ignores = true
 show_error_codes = true
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "teton_email_agent.models"
+ignore_errors = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = """
-    --cov=email_agent
+    --cov=teton_email_agent
     --cov-config=pyproject.toml
     --cov-report=term
     --cov-report=lcov:lcov.info
@@ -96,6 +113,8 @@ ignore = [
     "E501",
     # DoNotAssignLambda
     "E731",
+    # False positive on filenames
+    "S105",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -106,8 +125,8 @@ skip_empty = true
 
 [tool.coverage.run]
 branch = true
-source = ["email_agent"]
+source = ["teton_email_agent"]
 
 [tool.vulture]
-paths = ["email_agent", "vulture_whitelist.py"]
+paths = ["teton_email_agent", "vulture_whitelist.py"]
 sort_by_size = true
